@@ -1,0 +1,41 @@
+name: Access on repo
+on:
+  workflow_dispatch:
+    inputs:
+      repository_name:
+        description: Name of the REPO to grant access
+        required: true
+      project_id:
+        description: ID of the project where the repo exist
+        required: true
+      repo_location:
+        description: Location of the repo 
+        required: true
+      Service_account_id:
+        description: Principal on whcih access need to be grant
+        required: true
+      role_id:
+        description: ID of the role 
+        required: true			
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+  pull-requests: write
+jobs:
+  access-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Authenticate to GCP
+        id: gcp-auth
+        uses: google-github-actions/auth@v2
+        with:
+          create_credentials_file: 'true'
+          token_format: 'access_token'
+          workload_identity_provider: projects/442242090848/locations/global/workloadIdentityPools/githubaction/providers/saas-resource-management
+          service_account: svc-saas-resource-deployer@gcp-koss01.iam.gserviceaccount.com
+          access_token_lifetime: 3600s      
+      - name: Acccess on repo
+        run: |
+          gcloud artifacts repositories add-iam-policy-binding ${{ inputs.repository_name }} --location=${{ inputs.repo_location }} --member=${{ inputs.Service_account_id }} --role=${{ inputs.role_id }} --project=${{ inputs.project_id }}
